@@ -1,13 +1,14 @@
 #include "SequencerIO.h"
+#include <EEPROM.h>
 
 /*
-  GateSequencer v1
+  GateSequencer v2
 
   モード仕様
     0: 8step x2 シーケンサ (Dual Mode)
     1: 16step シーケンサ (Single Mode w/ Fill & Mute)
     2: シフトレジスタモード (Shift Register / Turing Machine style)
-
+  
   共通 I/O マッピング
     CLK IN       : 外部クロック
     IN A         : Mode0/1=汎用, Mode2=DATA IN
@@ -29,6 +30,12 @@
     LED_A        : IN A / Push A 状態
     LED_B        : IN B / Push B 状態
     LED_C        : IN C / Push C 状態
+
+  設定モード (起動時に Push_CLK + Push_A 同時押し)
+    Mode A (Push_B): Step Gateは常にHIGH (デフォルト)
+    Mode B (Push_C): Step Gateもスイッチ確率に従う
+    Push_CLK: 保存して終了
+    Push_A:   保存せず終了
 */
 
 // =========================================================
@@ -40,8 +47,18 @@
 #define PUSH_TRIG_US      2000  // 手動クロック時のトリガ幅
 #define PUSH_DEBOUNCE_US  8000  // Push_CLK デバウンス時間
 
+// EEPROM アドレスマップ
+#define EEPROM_ADDR_CFG          0  // Gate出力モード設定
+#define EEPROM_ADDR_M0_SYNC_AB   1  // Mode0 Sync AB 設定
+#define EEPROM_ADDR_M0_SYNC_RST  2  // Mode0 Reset Sync 設定
+
 // グローバル状態
 static uint8_t g_mode = 0; // 現在のモード (0, 1, 2)
+
+// Gate出力設定 (Mode0/1用)
+// true (Mode A): そのステップに到達したら確率に関係なくGate OUTはHIGH (TRIGは確率依存)
+// false (Mode B): Gate OUTも確率スイッチ(OFF/PROB/ON)に依存する
+static bool g_cfgGateAlwaysOn = true;
 
 // 方向定義
 enum DirMode : uint8_t { DIR_FORWARD=0, DIR_PINGPONG=1, DIR_RANDOM=2 };
@@ -89,7 +106,6 @@ static bool s_prevPushA=false, s_prevPushB=false, s_prevPushC=false;
 // =========================================================
 
 // スイッチの値 (0/1/2) から確率でTrue/Falseを返す
-// 2(上): 100%, 1(中): 50%, 0(下): 0%
 static inline bool chanceFromSwitch(uint8_t swVal) {
   if (swVal >= 2) return true;
   if (swVal == 1) return (random(0,100) < 50);
@@ -151,6 +167,70 @@ static inline void panelLedWrite(uint8_t pin, uint8_t pct){
 static inline void ledAllOff(){ seqLedSetOffAll(); }
 static inline void ledSetWeak(uint8_t ch){ seqLedSetPct(ch, 1); }   // 待機状態
 static inline void ledSetFull(uint8_t ch){ seqLedSetPct(ch, 100); } // アクティブ
+
+// =========================================================
+// 設定モード (Config Mode)
+// =========================================================
+
+static void runConfigMode() {
+  bool tempSetting = g_cfgGateAlwaysOn;
+  
+  // 誤動作防止: 起動時のボタンが離されるまで少し待つ
+  while (seqReadPush(PUSH_IDX_CLK) || seqReadPush(PUSH_IDX_A)) {
+    seqPollInputs();
+    delay(10);
+  }
+
+  while (true) {
+    seqPollInputs();
+
+    // 入力処理
+    if (seqReadPush(PUSH_IDX_B)) {
+      tempSetting = true;  // Mode A (強制HIGH)
+    }
+    if (seqReadPush(PUSH_IDX_C)) {
+      tempSetting = false; // Mode B (スイッチ依存)
+    }
+
+    // 保存して終了 (Push_CLK)
+    if (seqReadPush(PUSH_IDX_CLK)) {
+      EEPROM.write(EEPROM_ADDR_CFG, tempSetting ? 1 : 0);
+      EEPROM.commit();
+      g_cfgGateAlwaysOn = tempSetting;
+      // 終了時の点滅演出
+      for(int i=0; i<3; ++i){
+        panelLedWrite(PIN_PANEL_LED_CLK, 100); delay(100);
+        panelLedWrite(PIN_PANEL_LED_CLK, 0);   delay(100);
+      }
+      break; 
+    }
+
+    // 保存せず終了 (Push_A)
+    if (seqReadPush(PUSH_IDX_A)) {
+      // 設定変更を破棄（g_cfgGateAlwaysOnはsetupでロードされた値のまま）
+      break;
+    }
+
+    // LED表示
+    // LED_CLK, LED_A は押下時のみ点灯
+    panelLedWrite(PIN_PANEL_LED_CLK, seqReadPush(PUSH_IDX_CLK) ? 100 : 0);
+    panelLedWrite(PIN_PANEL_LED_A,   seqReadPush(PUSH_IDX_A)   ? 100 : 0);
+
+    // LED_B は Mode A のとき点灯
+    panelLedWrite(PIN_PANEL_LED_B,   tempSetting ? 100 : 0);
+    
+    // LED_C は Mode B のとき点灯
+    panelLedWrite(PIN_PANEL_LED_C,   !tempSetting ? 100 : 0);
+
+    delay(10);
+  }
+
+  // 全LED消灯してから通常モードへ
+  panelLedWrite(PIN_PANEL_LED_CLK, 0);
+  panelLedWrite(PIN_PANEL_LED_A, 0);
+  panelLedWrite(PIN_PANEL_LED_B, 0);
+  panelLedWrite(PIN_PANEL_LED_C, 0);
+}
 
 // =========================================================
 // 入力読み出し (SequencerIO利用)
@@ -306,8 +386,11 @@ static void mode0_begin() {
   seqB = SeqState{};
   seqA.gateLatched = mode0_latchGate(seqA.step, 1);
   seqB.gateLatched = mode0_latchGate(seqB.step, 9);
-  s_m0_syncAB  = false;
-  s_m0_syncRst = false;
+  
+  // EEPROMから前回の設定を復元 (1=true, 0 or 0xFF=false)
+  s_m0_syncAB  = (EEPROM.read(EEPROM_ADDR_M0_SYNC_AB) == 1);
+  s_m0_syncRst = (EEPROM.read(EEPROM_ADDR_M0_SYNC_RST) == 1);
+
   s_debouncePushClk = Debounce{};
   trigInit(s_trigShapeA);
   trigInit(s_trigShapeB);
@@ -326,9 +409,17 @@ static void mode0_update(const Inputs& in) {
   panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? 100 : 0);
   panelLedWrite(PIN_PANEL_LED_C,   s_m0_syncRst ? 100 : ((in.lvlCin || in.pushC) ? 100 : 0));
 
-  // 設定切り替え
-  if (in.pushARise) s_m0_syncAB  = !s_m0_syncAB;
-  if (in.pushCRise) s_m0_syncRst = !s_m0_syncRst;
+  // 設定切り替え & EEPROM保存
+  if (in.pushARise) {
+    s_m0_syncAB = !s_m0_syncAB;
+    EEPROM.write(EEPROM_ADDR_M0_SYNC_AB, s_m0_syncAB ? 1 : 0);
+    EEPROM.commit();
+  }
+  if (in.pushCRise) {
+    s_m0_syncRst = !s_m0_syncRst;
+    EEPROM.write(EEPROM_ADDR_M0_SYNC_RST, s_m0_syncRst ? 1 : 0);
+    EEPROM.commit();
+  }
 
   if (in.pause) {
     seqTrigA(false);
@@ -379,20 +470,30 @@ static void mode0_update(const Inputs& in) {
     seqB.gateLatched = mode0_latchGate(seqB.step, 9);
   }
 
-  // OUT出力設定
+  // --- OUT出力設定 (Gate Mode適用) ---
+  bool gateA = seqA.gateLatched;
+  bool gateB = seqB.gateLatched;
+  
+  if (g_cfgGateAlwaysOn) {
+    // Mode A: Gateは常にHIGH (TRIGだけ確率依存)
+    gateA = true;
+    gateB = true;
+  }
+
   uint16_t outMask = 0;
-  if (seqA.gateLatched) outMask |= (1u << seqA.step);
-  if (seqB.gateLatched) outMask |= (1u << (seqB.step + 8));
+  if (gateA) outMask |= (1u << seqA.step);
+  if (gateB) outMask |= (1u << (seqB.step + 8));
   seqSetOutMask(outMask);
 
-  // ステップLED更新
+  // ステップLED更新 (Gateの状態に従う)
   ledAllOff();
-  if (seqA.gateLatched) ledSetFull(seqA.step + 1);
-  else                  ledSetWeak(seqA.step + 1);
-  if (seqB.gateLatched) ledSetFull(seqB.step + 9);
-  else                  ledSetWeak(seqB.step + 9);
+  if (gateA) ledSetFull(seqA.step + 1);
+  else       ledSetWeak(seqA.step + 1);
+  if (gateB) ledSetFull(seqB.step + 9);
+  else       ledSetWeak(seqB.step + 9);
 
-  // トリガ出力整形
+  // --- トリガ出力整形 (Gate Modeに関わらず確率スイッチ依存) ---
+  // seqA.gateLatched / seqB.gateLatched (確率結果) を使用する
   const bool baseA   = (seqA.gateLatched && in.lvlClk) || seqA.pushPulseActive;
   const bool baseB   = (seqB.gateLatched && (s_m0_syncAB ? in.lvlClk : in.lvlAin));
   const bool shapedA = trigShape(baseA, s_trigShapeA);
@@ -510,8 +611,14 @@ static void mode1_update(const Inputs& in) {
     s_m1.gateLatched = mode1_latchGate(s_m1.step);
   }
 
-  // ゲート出力判定 (Fill/Mute考慮)
+  // --- ゲート出力判定 (Gate Mode & Fill/Mute考慮) ---
   bool gateNow = s_m1.gateLatched;
+  
+  if (g_cfgGateAlwaysOn) {
+    gateNow = true; // Mode A: 強制HIGH
+  }
+
+  // FILL/MUTEはスイッチや設定より優先
   if (fillActive) gateNow = true;
   if (muteActive) gateNow = false;
 
@@ -529,11 +636,15 @@ static void mode1_update(const Inputs& in) {
   if (gateNow) ledSetFull(ch);
   else         ledSetWeak(ch);
 
-  // トリガ出力
-  // A: 反転ゲート (Low Activeっぽい挙動)
-  // B: 正論理ゲート
-  const bool baseA   = (!gateNow) && clkLevel;
-  const bool baseB   = ( gateNow) && clkLevel;
+  // --- トリガ出力 (確率は s_m1.gateLatched を参照) ---
+  // Mode Aでも TRIG は確率で歯抜けになる
+  
+  bool trigActive = s_m1.gateLatched;
+  if (fillActive) trigActive = true;
+  if (muteActive) trigActive = false;
+
+  const bool baseA   = (!trigActive) && clkLevel; // Inverted
+  const bool baseB   = ( trigActive) && clkLevel; // Normal
   const bool shapedA = trigShape(baseA, s_trigShapeA);
   const bool shapedB = trigShape(baseB, s_trigShapeB);
   seqTrigA(shapedA);
@@ -879,8 +990,25 @@ static void updateMode(const Inputs& in) {
 void setup() {
   seqBegin();
   seqPollInputs(); // 初期状態取得
-  randomSeed(analogRead(28)); // 未接続ピンで乱数シード
+  randomSeed(analogRead(28));
 
+  // EEPROM初期化 (RP2040はFlashを使用)
+  EEPROM.begin(512);
+
+  // 設定ロード (0xFF or 1 = Mode A, 0 = Mode B)
+  uint8_t storedVal = EEPROM.read(EEPROM_ADDR_CFG);
+  if (storedVal == 0) {
+    g_cfgGateAlwaysOn = false; // Mode B
+  } else {
+    g_cfgGateAlwaysOn = true;  // Mode A (Default)
+  }
+
+  // 設定モード判定 (Push_CLK + Push_A 同時押し)
+  if (seqReadPush(PUSH_IDX_CLK) && seqReadPush(PUSH_IDX_A)) {
+    runConfigMode();
+  }
+
+  // 通常起動
   enterMode(0);
   g_mode = 0;
 }
