@@ -2,7 +2,7 @@
 #include <EEPROM.h>
 
 /*
-  GateSequencer v2
+  GateSequencer v2.1 (Random Update)
 
   モード仕様
     0: 8step x2 シーケンサ (Dual Mode)
@@ -46,6 +46,11 @@
 #define MAX_STEPS_MODE1   16
 #define PUSH_TRIG_US      2000  // 手動クロック時のトリガ幅
 #define PUSH_DEBOUNCE_US  8000  // Push_CLK デバウンス時間
+
+// LED輝度設定 (0〜100%)
+static const uint8_t LED_PCT_OFF  = 0;
+static const uint8_t LED_PCT_WEAK = 2;    // 弱点灯 (待機時など)
+static const uint8_t LED_PCT_FULL = 100;  // 強点灯 (Active時)
 
 // EEPROM アドレスマップ
 #define EEPROM_ADDR_CFG          0  // Gate出力モード設定
@@ -163,10 +168,10 @@ static inline void panelLedWrite(uint8_t pin, uint8_t pct){
   analogWrite(pin, pctTo8bit(pct));
 }
 
-// ステップLED制御ヘルパー
+// ステップLED制御ヘルパー (輝度定数を使用)
 static inline void ledAllOff(){ seqLedSetOffAll(); }
-static inline void ledSetWeak(uint8_t ch){ seqLedSetPct(ch, 1); }   // 待機状態
-static inline void ledSetFull(uint8_t ch){ seqLedSetPct(ch, 100); } // アクティブ
+static inline void ledSetWeak(uint8_t ch){ seqLedSetPct(ch, LED_PCT_WEAK); }
+static inline void ledSetFull(uint8_t ch){ seqLedSetPct(ch, LED_PCT_FULL); }
 
 // =========================================================
 // 設定モード (Config Mode)
@@ -199,8 +204,8 @@ static void runConfigMode() {
       g_cfgGateAlwaysOn = tempSetting;
       // 終了時の点滅演出
       for(int i=0; i<3; ++i){
-        panelLedWrite(PIN_PANEL_LED_CLK, 100); delay(100);
-        panelLedWrite(PIN_PANEL_LED_CLK, 0);   delay(100);
+        panelLedWrite(PIN_PANEL_LED_CLK, LED_PCT_FULL); delay(100);
+        panelLedWrite(PIN_PANEL_LED_CLK, LED_PCT_OFF);  delay(100);
       }
       break; 
     }
@@ -213,23 +218,23 @@ static void runConfigMode() {
 
     // LED表示
     // LED_CLK, LED_A は押下時のみ点灯
-    panelLedWrite(PIN_PANEL_LED_CLK, seqReadPush(PUSH_IDX_CLK) ? 100 : 0);
-    panelLedWrite(PIN_PANEL_LED_A,   seqReadPush(PUSH_IDX_A)   ? 100 : 0);
+    panelLedWrite(PIN_PANEL_LED_CLK, seqReadPush(PUSH_IDX_CLK) ? LED_PCT_FULL : LED_PCT_OFF);
+    panelLedWrite(PIN_PANEL_LED_A,   seqReadPush(PUSH_IDX_A)   ? LED_PCT_FULL : LED_PCT_OFF);
 
     // LED_B は Mode A のとき点灯
-    panelLedWrite(PIN_PANEL_LED_B,   tempSetting ? 100 : 0);
+    panelLedWrite(PIN_PANEL_LED_B,   tempSetting ? LED_PCT_FULL : LED_PCT_OFF);
     
     // LED_C は Mode B のとき点灯
-    panelLedWrite(PIN_PANEL_LED_C,   !tempSetting ? 100 : 0);
+    panelLedWrite(PIN_PANEL_LED_C,   !tempSetting ? LED_PCT_FULL : LED_PCT_OFF);
 
     delay(10);
   }
 
   // 全LED消灯してから通常モードへ
-  panelLedWrite(PIN_PANEL_LED_CLK, 0);
-  panelLedWrite(PIN_PANEL_LED_A, 0);
-  panelLedWrite(PIN_PANEL_LED_B, 0);
-  panelLedWrite(PIN_PANEL_LED_C, 0);
+  panelLedWrite(PIN_PANEL_LED_CLK, LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_A, LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_B, LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_C, LED_PCT_OFF);
 }
 
 // =========================================================
@@ -337,22 +342,8 @@ static inline bool mode0_latchGate(uint8_t step0, uint8_t baseIdx) {
 // ランダムモード用：全ステップを踏破するまでリセットしないランダム
 static uint8_t mode0_nextRandom(bool isA, uint8_t curStep){
   uint8_t &visited   = isA ? s_m0_randVisitedA : s_m0_randVisitedB;
-  const uint8_t base = isA ? 1 : 9; // SW1..8 or SW9..16
-
-  // 有効なステップ（スイッチがOFF以外）を抽出
-  uint8_t enabledMask = 0;
-  for (uint8_t i=0; i<MAX_STEPS_MODE0; ++i){
-    uint8_t swVal = seqReadSwitch(base + i);
-    if (swVal >= 1) enabledMask |= (uint8_t)(1u << i); // 中or上で有効とみなす
-  }
-
-  // 全てOFFなら純粋ランダム
-  if (!enabledMask) {
-    uint8_t nxt;
-    do { nxt = (uint8_t)random(0, MAX_STEPS_MODE0); } while (nxt == curStep);
-    visited = 0;
-    return nxt;
-  }
+  // スイッチの状態に関わらず全ステップを候補とする
+  uint8_t enabledMask = 0xFF; 
 
   visited &= enabledMask;
   uint8_t candidateMask = enabledMask & (uint8_t)~(1u << curStep);
@@ -404,10 +395,10 @@ static void mode0_update(const Inputs& in) {
   const DirMode dirMode = readDirMode(in.swDir);
 
   // パネルLED表示
-  panelLedWrite(PIN_PANEL_LED_CLK, (in.lvlClk || in.pushClk) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_A,   s_m0_syncAB ? 100 : ((in.lvlAin || in.pushA) ? 100 : 0));
-  panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_C,   s_m0_syncRst ? 100 : ((in.lvlCin || in.pushC) ? 100 : 0));
+  panelLedWrite(PIN_PANEL_LED_CLK, (in.lvlClk || in.pushClk) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_A,   s_m0_syncAB ? LED_PCT_FULL : ((in.lvlAin || in.pushA) ? LED_PCT_FULL : LED_PCT_OFF));
+  panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_C,   s_m0_syncRst ? LED_PCT_FULL : ((in.lvlCin || in.pushC) ? LED_PCT_FULL : LED_PCT_OFF));
 
   // 設定切り替え & EEPROM保存
   if (in.pushARise) {
@@ -470,30 +461,35 @@ static void mode0_update(const Inputs& in) {
     seqB.gateLatched = mode0_latchGate(seqB.step, 9);
   }
 
-  // --- OUT出力設定 (Gate Mode適用) ---
-  bool gateA = seqA.gateLatched;
-  bool gateB = seqB.gateLatched;
+  // --- 状態決定 ---
+  // gateLatched: 確率抽選結果 (LED表示に使用)
+  bool ledA = seqA.gateLatched;
+  bool ledB = seqB.gateLatched;
   
+  // gateOut: 実際のゲート出力 (Mode Aなら強制HIGH)
+  bool gateOutA = ledA;
+  bool gateOutB = ledB;
+
   if (g_cfgGateAlwaysOn) {
-    // Mode A: Gateは常にHIGH (TRIGだけ確率依存)
-    gateA = true;
-    gateB = true;
+    gateOutA = true;
+    gateOutB = true;
   }
 
+  // OUT出力
   uint16_t outMask = 0;
-  if (gateA) outMask |= (1u << seqA.step);
-  if (gateB) outMask |= (1u << (seqB.step + 8));
+  if (gateOutA) outMask |= (1u << seqA.step);
+  if (gateOutB) outMask |= (1u << (seqB.step + 8));
   seqSetOutMask(outMask);
 
-  // ステップLED更新 (Gateの状態に従う)
+  // ステップLED更新 (確率結果に従う: Always Onでも確率外れは弱点灯)
   ledAllOff();
-  if (gateA) ledSetFull(seqA.step + 1);
-  else       ledSetWeak(seqA.step + 1);
-  if (gateB) ledSetFull(seqB.step + 9);
-  else       ledSetWeak(seqB.step + 9);
+  if (ledA) ledSetFull(seqA.step + 1);
+  else      ledSetWeak(seqA.step + 1);
+  
+  if (ledB) ledSetFull(seqB.step + 9);
+  else      ledSetWeak(seqB.step + 9);
 
   // --- トリガ出力整形 (Gate Modeに関わらず確率スイッチ依存) ---
-  // seqA.gateLatched / seqB.gateLatched (確率結果) を使用する
   const bool baseA   = (seqA.gateLatched && in.lvlClk) || seqA.pushPulseActive;
   const bool baseB   = (seqB.gateLatched && (s_m0_syncAB ? in.lvlClk : in.lvlAin));
   const bool shapedA = trigShape(baseA, s_trigShapeA);
@@ -527,18 +523,8 @@ static inline bool mode1_latchGate(uint8_t st){
 }
 
 static uint8_t mode1_nextRandom(uint8_t curStep){
-  uint16_t enabledMask = 0;
-  for (uint8_t st=0; st<MAX_STEPS_MODE1; ++st){
-    uint8_t swVal = seqReadSwitch(mode1_swIndexForStep(st));
-    if (swVal >= 1) enabledMask |= (uint16_t)(1u << st);
-  }
-
-  if (!enabledMask) {
-    uint8_t nxt;
-    do { nxt = (uint8_t)random(0, MAX_STEPS_MODE1); } while (nxt == curStep);
-    s_m1_randVisited = 0;
-    return nxt;
-  }
+  // スイッチの状態に関わらず全ステップを候補とする
+  uint16_t enabledMask = 0xFFFF;
 
   s_m1_randVisited &= enabledMask;
   uint16_t candidateMask = enabledMask & (uint16_t)~(1u << curStep);
@@ -578,10 +564,10 @@ static void mode1_begin() {
 static void mode1_update(const Inputs& in) {
   const DirMode dirMode = readDirMode(in.swDir);
 
-  panelLedWrite(PIN_PANEL_LED_CLK, (in.lvlClk || in.pushClk) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_A,   (in.lvlAin || in.pushA) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_C,   (in.lvlCin || in.pushC) ? 100 : 0);
+  panelLedWrite(PIN_PANEL_LED_CLK, (in.lvlClk || in.pushClk) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_A,   (in.lvlAin || in.pushA) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_C,   (in.lvlCin || in.pushC) ? LED_PCT_FULL : LED_PCT_OFF);
 
   const bool clkLevel   = (in.lvlClk || in.pushClk);
   const bool fillActive = (in.lvlAin || in.pushA); // FILL機能
@@ -611,40 +597,47 @@ static void mode1_update(const Inputs& in) {
     s_m1.gateLatched = mode1_latchGate(s_m1.step);
   }
 
-  // --- ゲート出力判定 (Gate Mode & Fill/Mute考慮) ---
-  bool gateNow = s_m1.gateLatched;
+  // --- 状態決定 ---
+  // ledStatus: 確率抽選結果 (LED表示に使用)
+  bool ledStatus = s_m1.gateLatched;
+  
+  // gateOut: 実際のゲート出力
+  bool gateOut = ledStatus;
   
   if (g_cfgGateAlwaysOn) {
-    gateNow = true; // Mode A: 強制HIGH
+    gateOut = true; // Mode A: 強制HIGH
   }
 
-  // FILL/MUTEはスイッチや設定より優先
-  if (fillActive) gateNow = true;
-  if (muteActive) gateNow = false;
+  // FILL/MUTE override (Gate出力・LEDともに上書き)
+  if (fillActive) {
+    gateOut = true;
+    ledStatus = true;
+  }
+  if (muteActive) {
+    gateOut = false;
+    ledStatus = false;
+  }
 
+  // OUT出力
   uint16_t outMask = 0;
-  if (gateNow) {
+  if (gateOut) {
     // Step 0-7 -> ch1-8, Step 8-15 -> ch9-16
     if (s_m1.step < 8) outMask |= (1u << s_m1.step);
     else               outMask |= (1u << (8 + (s_m1.step - 8)));
   }
   seqSetOutMask(outMask);
 
+  // LED更新 (確率結果またはFILL/MUTEに従う)
   ledAllOff();
   const uint8_t ch = (s_m1.step < 8) ? (uint8_t)(s_m1.step + 1)
                                      : (uint8_t)(s_m1.step - 8 + 9);
-  if (gateNow) ledSetFull(ch);
-  else         ledSetWeak(ch);
+  if (ledStatus) ledSetFull(ch);
+  else           ledSetWeak(ch);
 
-  // --- トリガ出力 (確率は s_m1.gateLatched を参照) ---
+  // --- トリガ出力 (確率は ledStatus=gateLatched を参照) ---
   // Mode Aでも TRIG は確率で歯抜けになる
-  
-  bool trigActive = s_m1.gateLatched;
-  if (fillActive) trigActive = true;
-  if (muteActive) trigActive = false;
-
-  const bool baseA   = (!trigActive) && clkLevel; // Inverted
-  const bool baseB   = ( trigActive) && clkLevel; // Normal
+  const bool baseA   = (!ledStatus) && clkLevel; // Inverted
+  const bool baseB   = ( ledStatus) && clkLevel; // Normal
   const bool shapedA = trigShape(baseA, s_trigShapeA);
   const bool shapedB = trigShape(baseB, s_trigShapeB);
   seqTrigA(shapedA);
@@ -902,10 +895,10 @@ static void mode2_update(const Inputs& in) {
     s_m2_prevDir = dirMode;
   }
 
-  panelLedWrite(PIN_PANEL_LED_CLK, (in.lvlClk || in.pushClk) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_A,   (in.lvlAin || in.pushA) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? 100 : 0);
-  panelLedWrite(PIN_PANEL_LED_C,   (in.lvlCin || in.pushC) ? 100 : 0);
+  panelLedWrite(PIN_PANEL_LED_CLK, (in.lvlClk || in.pushClk) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_A,   (in.lvlAin || in.pushA) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_B,   (in.lvlBin || in.pushB) ? LED_PCT_FULL : LED_PCT_OFF);
+  panelLedWrite(PIN_PANEL_LED_C,   (in.lvlCin || in.pushC) ? LED_PCT_FULL : LED_PCT_OFF);
 
   if (in.pause) {
     seqTrigA(false);
@@ -949,10 +942,10 @@ static void mode2_update(const Inputs& in) {
       continue;
     } else if (sw == 1) {
       // MID: データ通過のみ (LED微弱点灯)
-      seqLedSetPct(i+1, 1);
+      seqLedSetPct(i+1, LED_PCT_WEAK);
     } else if (sw == 2) {
       // ON: データ出力 (LED全点灯, Gate Output)
-      seqLedSetPct(i+1, 100);
+      seqLedSetPct(i+1, LED_PCT_FULL);
       outMask |= (uint16_t)(1u << i);
     }
   }
