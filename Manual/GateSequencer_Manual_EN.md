@@ -1,6 +1,6 @@
 # Gate Sequencer Manual (English)
 
-![Gate Sequencer Front](../../Images/GateSequencer_v1.0_Front.jpg)
+![Gate Sequencer Front](../Images/GateSequencer_v1.0_Front.jpg)
 
 ## Overview
 
@@ -26,7 +26,7 @@ The **Gate Sequencer** is a multi-functional gate sequencer equipped with toggle
 
 ## Functions of Parts
 
-![Gate Sequencer Ex](../../Images/GateSequencer_v1.0_Ex.jpg)
+![Gate Sequencer Ex](../Images/GateSequencer_v1.0_Ex.jpg)
 
 1. **Probability Switch (1-16)**
     3-position toggle switches that set the behavior for each step.

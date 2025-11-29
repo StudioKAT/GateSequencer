@@ -1,6 +1,6 @@
 # Gate Sequencer マニュアル（日本語）
 
-![Gate Sequencer Front](../../Images/GateSequencer_v1.0_Front.jpg)
+![Gate Sequencer Front](../Images/GateSequencer_v1.0_Front.jpg)
 
 ## 概要
 
@@ -27,7 +27,7 @@
 
 ## 各部の機能
 
-![Gate Sequencer Ex](../../Images/GateSequencer_v1.0_Ex.jpg)
+![Gate Sequencer Ex](../Images/GateSequencer_v1.0_Ex.jpg)
 
 1. **Probability Switch (1-16)**
     各ステップの挙動を設定する3ポジショントグルスイッチです。
