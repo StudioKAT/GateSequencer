@@ -30,7 +30,7 @@ The **Gate Sequencer** is a multi-functional gate sequencer equipped with toggle
 
 ![Gate Sequencer Ex](../Images/GateSequencer_v2.0_Ex.jpg)
 
-1. **Step Switch (1-16)**
+1. **Step Switch (1-16)**  
     3-position toggle switches that set the behavior for each step.
     The meaning of L / C / R depends on the mode.
 
@@ -42,20 +42,20 @@ The **Gate Sequencer** is a multi-functional gate sequencer equipped with toggle
 
     (See the "Operation Modes" section for details.)
 
-2. **Step LED (1-16)**
+2. **Step LED (1-16)**  
     Displays the current step position and the gate state.
     - In MODE 1 and 2, the LED of the current step lights up.
       - Full brightness when the step outputs a TRIG, weak brightness when it does not.
     - In MODE 3, the LEDs show the bits that hold data (1).
       - ACTIVE steps light at full brightness, MUTE steps at weak brightness.
 
-3. **Direction Switch**
+3. **Direction Switch**  
     Sets the playback direction of the sequence.
     - **L**: **Forward** - Advances from 1 → 16.
     - **C**: **PingPong** - Plays back and forth. The end steps play twice in a row.
     - **R**: **Random** - Picks the next step at random from all steps except the current one.
 
-4. **Mode Switch**
+4. **Mode Switch**  
     Switches the operation mode of the module.
     - **L**: **MODE 1** (Dual 8 Step Sequencer)
     - **C**: **MODE 2** (16 Step Sequencer)
@@ -63,12 +63,12 @@ The **Gate Sequencer** is a multi-functional gate sequencer equipped with toggle
 
     When you change the mode, the sequence restarts from step 1 (in MODE 3, the register is cleared).
 
-5. **Clock Button / Clock IN**
+5. **Clock Button / Clock IN**  
     Clock input to advance the sequence.
     - **Button**: Manually advances the clock.
     - **IN**: Input for external clock.
 
-6. **Button A, B, C / IN A, B, C**
+6. **Button A, B, C / IN A, B, C**  
     Multi-function inputs where the function changes based on the selected mode.
     - **A**: Clock B / Fill / Data Input
     - **B**: Reset / Clear
@@ -77,22 +77,22 @@ The **Gate Sequencer** is a multi-functional gate sequencer equipped with toggle
 
     Holding **Button A and Button B together** while powering on enters the firmware update mode (see "Firmware Update").
 
-7. **Pause IN**
+7. **Pause IN**  
     While the input is HIGH (+5V), the sequence pauses.
     - Clock and reset inputs are ignored, and the TRIG outputs stop.
     - The **Step Gate OUT** keeps the state it had when paused.
 
     During a firmware update, this jack receives the update audio.
 
-8. **Step Gate OUT (1-16)**
+8. **Step Gate OUT (1-16)**  
     Outputs gate signals (+5V) for each step.
 
-9. **Trig A, B OUT**
+9. **Trig A, B OUT**  
     Outputs triggers or logic signals depending on the mode.
     - The output width follows the HIGH length of the clock. Even with a short clock, the output is at least 3ms wide.
     (See the "Operation Modes" section for details.)
 
-10. **Panel LED**
+10. **Panel LED**  
     Displays the state of the inputs and outputs.
 
     | LED | Indication |
