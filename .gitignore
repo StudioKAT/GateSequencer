@@ -1,1 +1,10 @@
-/Hardware/v1.0/KiCAD/Gate Sequencer/Gate Sequencer-backups/
+# KiCad backup folders
+*-backups/
+
+# KiCad autosave / temporary files
+*.kicad_sch-bak
+*.kicad_pcb-bak
+*.bak
+*.bck
+*.tmp
+*.autosave
