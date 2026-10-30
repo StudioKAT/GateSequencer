@@ -1,5 +1,5 @@
 # Gate Sequencer
-![Gate Sequencer Front](Images/GateSequencer_v1.0_Front.jpg)
+![Gate Sequencer Front](v2.0/Images/GateSequencer_v2.0_Front.jpg)
 
 ## 概要 / Overview
 
@@ -19,14 +19,14 @@
 - Format: Eurorack
 - Function: Gate Sequencer
 - Current needs: +12V: 50mA, -12V: 0mA
-- Width: 16 HP
+- Width: 14 HP
 - Depth: 25mm (including power connector)
 
 
 ## 販売 / Sales
 
 StudioKATオフィシャルショップで販売しています。(日本国内限定)  
-https://www.studiokat.jp/items/126119796
+https://www.studiokat.jp/items/164466252
 
 
 ## ライセンス / License
@@ -45,6 +45,5 @@ This work is licensed under the [Creative Commons Attribution-ShareAlike 4.0 Int
 
 ## 更新履歴 / Changelog
 
-- `2025-11-29`：v2.1 リリース（ランダムモード挙動変更、LED表示改善）
-- `2025-11-27`：v2.0 リリース（コンフィグモード追加）
+- `2026-10-29`：v2.0 リリース
 - `2025-11-22`：v1.0 リリース

@@ -1,0 +1,11 @@
+# ビルド成果物
+build/
+*.elf
+*.bin
+*.hex
+*.lst
+*.map
+*.wav
+__pycache__/
+# ch32fun（README の手順で取得する）
+/ch32fun/
