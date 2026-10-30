@@ -233,7 +233,7 @@ WCH-LinkE（WCH 社の書き込み器）でモジュールのマイコンに直�
 - ジャンパワイヤ 2 本（WCH-LinkE → モジュールの J25）
 - WCH-LinkE 用のファームウェアファイル（`gate_sequencer_factory.bin`）
 - 書き込みツール `minichlink.exe` と `libusb-1.0.dll`
-  - [ch32fun](https://github.com/cnlohr/ch32fun) リポジトリの `minichlink` フォルダにあります。2 つを同じフォルダ（例: `C:\gs-flash`）に置いてください。
+  - [ch32fun](https://github.com/cnlohr/ch32fun) リポジトリの `minichlink` フォルダにあります。2 つを同じフォルダ（例: `C:\wch-linke-flash`）に置いてください。
   - 実行には Microsoft Visual C++ 再頒布可能パッケージ（x64）が必要です。
 
 > **注意**: WCH-LinkE で書き込むファイルは、WAV ではなく `gate_sequencer_factory.bin` です。

@@ -232,7 +232,7 @@ This section describes the procedure on Windows with the open-source programming
 - 2 jumper wires (WCH-LinkE → J25 on the module)
 - The firmware file for WCH-LinkE (`gate_sequencer_factory.bin`)
 - The programming tool `minichlink.exe` and `libusb-1.0.dll`
-  - They are in the `minichlink` folder of the [ch32fun](https://github.com/cnlohr/ch32fun) repository. Place both in the same folder (e.g. `C:\gs-flash`).
+  - They are in the `minichlink` folder of the [ch32fun](https://github.com/cnlohr/ch32fun) repository. Place both in the same folder (e.g. `C:\wch-linke-flash`).
   - The Microsoft Visual C++ Redistributable (x64) is required to run them.
 
 > **Note**: The file to write with the WCH-LinkE is `gate_sequencer_factory.bin`, not the WAV file.
