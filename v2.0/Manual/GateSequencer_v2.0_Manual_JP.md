@@ -251,7 +251,7 @@ WCH-LinkE（WCH 社の書き込み器）でモジュールのマイコンに直�
     - WCH-LinkE だけを USB につなぎ、PowerShell で次を実行します。
 
     ```powershell
-    cd C:\gs-flash
+    cd C:\wch-linke-flash
     .\minichlink.exe
     ```
 
@@ -273,7 +273,7 @@ WCH-LinkE（WCH 社の書き込み器）でモジュールのマイコンに直�
 #### 書き込み
 
 ```powershell
-cd C:\gs-flash
+cd C:\wch-linke-flash
 .\minichlink.exe -w gate_sequencer_factory.bin flash
 ```
 

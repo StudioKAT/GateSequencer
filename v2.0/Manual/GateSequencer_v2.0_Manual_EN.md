@@ -250,7 +250,7 @@ This section describes the procedure on Windows with the open-source programming
     - Connect only the WCH-LinkE to USB and run the following in PowerShell.
 
     ```powershell
-    cd C:\gs-flash
+    cd C:\wch-linke-flash
     .\minichlink.exe
     ```
 
@@ -272,7 +272,7 @@ Connect the module's header **J25** to the WCH-LinkE.
 #### Writing
 
 ```powershell
-cd C:\gs-flash
+cd C:\wch-linke-flash
 .\minichlink.exe -w gate_sequencer_factory.bin flash
 ```
 
