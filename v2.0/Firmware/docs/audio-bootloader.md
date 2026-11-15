@@ -94,7 +94,8 @@ make release    # WCH-LinkE 用イメージと更新用 WAV
 | `gate_sequencer_factory.bin` | WCH-LinkE 用イメージ（アプリ + 0xFF 埋め + メタデータ、16KB） |
 | `gate_sequencer_update.wav` | 更新用 WAV |
 
-- バージョンは `make release FW_VERSION=2` のように指定します（既定は 1）
+- バージョンは Makefile の `FW_VERSION`（メジャー.マイナー.パッチ、今は 2.0.1）です。`make release FW_VERSION=2.0.2` のようにも指定できます
+  - メタデータには 2B で `0xMMmp`（メジャー 8 ビット、マイナー・パッチ各 4 ビット）として入ります。2.0.1 は `0x0201` です。ブートローダはこの値を解釈しません
 
 ## WCH-LinkE での書き込み
 
