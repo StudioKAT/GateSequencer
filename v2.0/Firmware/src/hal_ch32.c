@@ -148,15 +148,19 @@ static uint8_t takeRise(FastIn *f)
 
 void halReadFastInputs(RawInputs *raw)
 {
-  raw->clkRises  = takeRise(&s_fast[FI_CLK]);
-  raw->aRises    = takeRise(&s_fast[FI_A]);
-  raw->bRises    = takeRise(&s_fast[FI_B]);
-  raw->cRises    = takeRise(&s_fast[FI_C]);
+  // レベルを先に、立ち上がり回数を後に読む（順番を変えないこと）。
+  // 逆順だと、2 つを読む間に来た立ち上がりで「レベルは HIGH・回数は 0」の組になり、
+  // 前のステップのまま TRIG が立って最小幅だけ残る（次のステップに不要なトリガが出る）。
+  // この順なら、HIGH に見えた立ち上がりは必ず回数にも入っている
   raw->lvlClk   = s_fast[FI_CLK].level;
   raw->lvlA     = s_fast[FI_A].level;
   raw->lvlB     = s_fast[FI_B].level;
   raw->lvlC     = s_fast[FI_C].level;
   raw->lvlPause = s_fast[FI_PAUSE].level;
+  raw->clkRises  = takeRise(&s_fast[FI_CLK]);
+  raw->aRises    = takeRise(&s_fast[FI_A]);
+  raw->bRises    = takeRise(&s_fast[FI_B]);
+  raw->cRises    = takeRise(&s_fast[FI_C]);
 }
 
 static void initFastInputs(void)
