@@ -7,11 +7,11 @@ It is written in C with [ch32fun](https://github.com/cnlohr/ch32fun).
 
 You can modify the source, build it, and write your own firmware to your module.
 You can write it with the same audio update as the official firmware (playing a WAV file), or with a WCH-LinkE.
-See the product manual for operation and update procedures.
+See the product manual ([English](../Manual/GateSequencer_v2.0_Manual_EN.md) / [日本語](../Manual/GateSequencer_v2.0_Manual_JP.md)) for operation and update procedures.
 
 ## Prebuilt Files
 
-`release/` contains files built from this source. If you do not modify the source, you do not need to build anything.
+`release/` contains the latest official firmware built from this source (see the update history in the manual for the version). If you do not modify the source, you do not need to build anything.
 
 | File | Contents |
 |---|---|
@@ -66,7 +66,7 @@ The version number is `FW_VERSION` in the Makefile (major.minor.patch, currently
 Play `gate_sequencer_update.wav` following "Updating via Audio" in the product manual.
 Hold Button A and Button B while powering on, and feed the WAV into Pause IN.
 
-To return to the official firmware, play the official update WAV in the same way.
+To return to the official firmware, play `release/gate_sequencer_update.wav` in the same way.
 
 ### Writing via WCH-LinkE
 
@@ -117,6 +117,7 @@ The bootloader design and writing details are in [Audio Bootloader](./docs/audio
 | `src/io_map.*` | 74HC595 / 74HC165 bit layout, switch decoding, LED dimming |
 | `bootloader/` | Audio bootloader and the update WAV encoder (`encode_wav.py`) |
 | `docs/` | Hardware map and audio bootloader specification (Japanese) |
+| `release/` | Prebuilt official firmware (update WAV, WCH-LinkE image, bootloader) |
 
 - Mode numbers in the source are 0 / 1 / 2, corresponding to MODE 1 / 2 / 3 in the manual
 - The pin and bit layout is in the [Hardware Map](./docs/hardware.md) (Japanese)

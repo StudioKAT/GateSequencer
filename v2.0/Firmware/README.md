@@ -7,11 +7,11 @@ StudioKAT の Eurorack モジュール **Gate Sequencer v2**（CH32V003F4U6）�
 
 ソースを書き換えてビルドすれば、自分のモジュールに好きなファームウェアを書き込めます。
 書き込みには、製品と同じオーディオでの更新（WAV の再生）か、WCH-LinkE を使えます。
-操作方法と更新の手順は、製品のマニュアルを参照してください。
+操作方法と更新の手順は、製品のマニュアル（[日本語](../Manual/GateSequencer_v2.0_Manual_JP.md) / [English](../Manual/GateSequencer_v2.0_Manual_EN.md)）を参照してください。
 
 ## ビルド済みのファイル
 
-`release/` に、このソースからビルドしたファイルがあります。ソースを書き換えずに使うなら、ビルドは不要です。
+`release/` に、このソースからビルドした最新の公式ファームウェア（バージョンはマニュアルの更新履歴を参照）があります。ソースを書き換えずに使うなら、ビルドは不要です。
 
 | ファイル | 内容 |
 |---|---|
@@ -66,7 +66,7 @@ make release    # 更新用 WAV と WCH-LinkE 用イメージ
 `gate_sequencer_update.wav` を、製品のマニュアルの「オーディオでのアップデート」の手順で再生します。
 Button A と Button B を押しながら電源を入れ、Pause IN に WAV の音を入力します。
 
-公式のファームウェアに戻すときは、公式の更新用 WAV を同じ手順で再生してください。
+公式のファームウェアに戻すときは、`release/gate_sequencer_update.wav` を同じ手順で再生してください。
 
 ### WCH-LinkE で書き込む
 
@@ -117,6 +117,7 @@ make flash_bootloader
 | `src/io_map.*` | 74HC595 / 74HC165 のビット配置、スイッチの判定、LED の調光 |
 | `bootloader/` | オーディオブートローダと、更新用 WAV のエンコーダ（`encode_wav.py`） |
 | `docs/` | ハードウェア対応表、オーディオブートローダの仕様 |
+| `release/` | ビルド済みの公式ファームウェア（更新用 WAV、WCH-LinkE 用イメージ、ブートローダ） |
 
 - ソース内のモード番号は 0 / 1 / 2 で、マニュアルの MODE 1 / 2 / 3 に対応します
 - ピンとビット配置は [ハードウェア対応表](./docs/hardware.md) にあります
