@@ -166,6 +166,8 @@ This mode circulates input data within an internal 16-bit register. It operates 
 
 The firmware can be updated in either of the following ways.
 
+The files for the update are in [v2.0/Firmware/release/](https://github.com/StudioKAT/GateSequencer/tree/main/v2.0/Firmware/release) on GitHub. It contains the files of the latest firmware.
+
 | Method | What you need | Use |
 | :--- | :--- | :--- |
 | **Audio** | Update WAV file, a device that can play WAV files, 3.5mm audio cable | Normal updates |
@@ -177,7 +179,7 @@ Play a WAV file on a computer or audio interface and feed the sound into **Pause
 
 #### What You Need
 
-- The update WAV file
+- The update WAV file ([`gate_sequencer_update.wav`](https://github.com/StudioKAT/GateSequencer/raw/main/v2.0/Firmware/release/gate_sequencer_update.wav))
 - A device that can play WAV files. Use one of the following:
   - Line output of an audio interface (recommended)
   - Headphone output of a computer
@@ -230,7 +232,7 @@ This section describes the procedure on Windows with the open-source programming
 - WCH-LinkE
 - Windows PC
 - 2 jumper wires (WCH-LinkE → J25 on the module)
-- The firmware file for WCH-LinkE (`gate_sequencer_factory.bin`)
+- The firmware file for WCH-LinkE ([`gate_sequencer_factory.bin`](https://github.com/StudioKAT/GateSequencer/raw/main/v2.0/Firmware/release/gate_sequencer_factory.bin))
 - The programming tool `minichlink.exe` and `libusb-1.0.dll`
   - They are in the `minichlink` folder of the [ch32fun](https://github.com/cnlohr/ch32fun) repository. Place both in the same folder (e.g. `C:\wch-linke-flash`).
   - The Microsoft Visual C++ Redistributable (x64) is required to run them.

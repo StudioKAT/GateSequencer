@@ -167,6 +167,8 @@
 
 ファームウェアは、次のどちらかの方法で更新できます。
 
+更新に使うファイルは、GitHub の [v2.0/Firmware/release/](https://github.com/StudioKAT/GateSequencer/tree/main/v2.0/Firmware/release) にあります。最新のファームウェアのファイルが置いてあります。
+
 | 方法 | 必要なもの | 用途 |
 | :--- | :--- | :--- |
 | **オーディオ** | 更新用 WAV ファイル、WAV を再生できる機器、3.5mm オーディオケーブル | 通常の更新 |
@@ -178,7 +180,7 @@
 
 #### 用意するもの
 
-- 更新用の WAV ファイル
+- 更新用の WAV ファイル（[`gate_sequencer_update.wav`](https://github.com/StudioKAT/GateSequencer/raw/main/v2.0/Firmware/release/gate_sequencer_update.wav)）
 - WAV を再生できる機器。次のどちらかを使ってください。
   - オーディオインターフェースのライン出力（おすすめ）
   - パソコンのヘッドホン出力
@@ -231,7 +233,7 @@ WCH-LinkE（WCH 社の書き込み器）でモジュールのマイコンに直�
 - WCH-LinkE
 - Windows PC
 - ジャンパワイヤ 2 本（WCH-LinkE → モジュールの J25）
-- WCH-LinkE 用のファームウェアファイル（`gate_sequencer_factory.bin`）
+- WCH-LinkE 用のファームウェアファイル（[`gate_sequencer_factory.bin`](https://github.com/StudioKAT/GateSequencer/raw/main/v2.0/Firmware/release/gate_sequencer_factory.bin)）
 - 書き込みツール `minichlink.exe` と `libusb-1.0.dll`
   - [ch32fun](https://github.com/cnlohr/ch32fun) リポジトリの `minichlink` フォルダにあります。2 つを同じフォルダ（例: `C:\wch-linke-flash`）に置いてください。
   - 実行には Microsoft Visual C++ 再頒布可能パッケージ（x64）が必要です。
