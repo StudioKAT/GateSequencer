@@ -57,7 +57,7 @@ make release    # 更新用 WAV と WCH-LinkE 用イメージ
 | `gate_sequencer_update.wav` | オーディオでの更新に使う WAV |
 | `gate_sequencer_factory.bin` | WCH-LinkE で書き込むイメージ（アプリ + 起動時の確認に使う情報） |
 
-バージョン番号は `make release FW_VERSION=2` のように指定できます（既定は 1）。
+バージョン番号は Makefile の `FW_VERSION` です（メジャー.マイナー.パッチ、今は 2.0.1）。`make release FW_VERSION=2.0.2` のようにも指定できます。
 
 ## 書き込み
 

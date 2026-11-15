@@ -57,7 +57,7 @@ make release    # Update WAV and WCH-LinkE image
 | `gate_sequencer_update.wav` | WAV for the audio update |
 | `gate_sequencer_factory.bin` | Image to write with the WCH-LinkE (application + information used for the check at startup) |
 
-You can set the version number with `make release FW_VERSION=2` (default: 1).
+The version number is `FW_VERSION` in the Makefile (major.minor.patch, currently 2.0.1). You can also set it with `make release FW_VERSION=2.0.2`.
 
 ## Writing the Firmware
 

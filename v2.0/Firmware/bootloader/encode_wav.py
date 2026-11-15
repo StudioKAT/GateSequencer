@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """アプリの .bin から、オーディオブートローダ用の更新 WAV を作る（標準ライブラリだけで動く）。
 
-    python3 encode_wav.py gate_sequencer.bin gate_sequencer_update.wav --version 2 [--factory factory.bin]
+    python3 encode_wav.py gate_sequencer.bin gate_sequencer_update.wav --version 2.0.1 [--factory factory.bin]
 
 --factory を付けると、工場で WCH-LinkE で書く 16KB のイメージ（アプリ + 0xFF 埋め + 最後のページに
 メタデータ）も作る。メタデータは、ブートローダが更新の最後に書くもの（END パケットの先頭 64B）と同じ。
@@ -119,11 +119,29 @@ def write_wav(path, samples, rate):
         w.writeframes(bytes(frames))
 
 
+def parse_version(text):
+    """"メジャー.マイナー.パッチ" を 2B に詰める（0xMMmp: メジャー 0..255、マイナー・パッチ 0..15）。
+    16 進で読むと元の表記になる（2.0.1 → 0x0201）。ブートローダはこの値を解釈しない"""
+    parts = text.split(".")
+    if len(parts) == 1:  # 整数そのまま（以前の形式）
+        v = int(parts[0], 0)
+        if not 0 <= v <= 0xFFFF:
+            raise argparse.ArgumentTypeError(f"バージョンは 0..65535: {text}")
+        return v
+    if len(parts) > 3 or not all(p.isdigit() for p in parts):
+        raise argparse.ArgumentTypeError(f"バージョンは メジャー.マイナー.パッチ の形式: {text}")
+    major, minor, patch = (int(p) for p in parts + ["0"] * (3 - len(parts)))
+    if major > 255 or minor > 15 or patch > 15:
+        raise argparse.ArgumentTypeError(f"メジャーは 0..255、マイナー・パッチは 0..15: {text}")
+    return (major << 8) | (minor << 4) | patch
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("bin")
     ap.add_argument("wav")
-    ap.add_argument("--version", type=int, default=1, help="ファームのバージョン（0..65535）")
+    ap.add_argument("--version", type=parse_version, default=1,
+                    help="ファームのバージョン（例: 2.0.1。メジャー.マイナー.パッチを 0xMMmp に詰める）")
     ap.add_argument("--passes", type=int, default=2, help="全ページを送る回数")
     ap.add_argument("--gap-ms", type=float, default=20.0, help="パケットの後の無音（ms）")
     ap.add_argument("--rate", type=int, default=48000)
@@ -139,7 +157,7 @@ def main():
     if a.factory:
         with open(a.factory, "wb") as f:
             f.write(factory_image(app, a.version, a.product))
-        print(f"{a.factory}: {APP_MAX + PAGE_SIZE} bytes (app + metadata, version {a.version})")
+        print(f"{a.factory}: {APP_MAX + PAGE_SIZE} bytes (app + metadata, version 0x{a.version:04x})")
     pages = (len(app) + PAGE_SIZE - 1) // PAGE_SIZE
     print(f"{a.wav}: {len(app)} bytes, {pages} pages x {a.passes} passes, "
           f"{len(samples) / a.rate:.1f}s, crc32={zlib.crc32(app) & 0xFFFFFFFF:08x}")

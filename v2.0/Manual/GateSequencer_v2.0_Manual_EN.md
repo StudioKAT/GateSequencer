@@ -313,6 +313,7 @@ This work is licensed under [Creative Commons Attribution-ShareAlike 4.0 Interna
 
 ## Update History
 
+- `2026-11-15`: Firmware v2.0.1 (fixed a bug where MODE 1 / 2 could output an unwanted trigger on the step after a step set to the right)
 - `2026-10-29`: v2.0 Release
   - The overall design has been revised to reduce the width from 16HP to 14HP, making it more compact.  
   - Changed the microcontroller to CH32V003  
